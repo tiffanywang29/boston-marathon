@@ -18,9 +18,9 @@ results_2015 <- read_csv("Data/marathon_results_2015.csv")
 results_2016 <- read_csv("Data/marathon_results_2016.csv")
 results_2017 <- read_csv("Data/marathon_results_2017.csv")
 
-#Not working - can't figure out how to turn it into a table
+#Table of past participants
 url <- "http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx"
 tables <- url %>%
   read_html() %>%
-  html_nodes(css = "tbody") 
+  html_nodes(css = "table") 
 participation <- html_table(tables[[2]])
