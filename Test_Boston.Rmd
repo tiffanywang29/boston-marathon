@@ -53,27 +53,13 @@ all <- bind_rows(mutate(results_2001, year = "2001"),
      select(age, gender, city, state, country, year)),
                  (results_2015 %>%
       mutate(year = "2015") %>%
-        rename(c("Age" = "age",
-              "M/F" = "gender",
-              "State" = "state",
-              "City" = "city",
-              "Country" = "country")) %>%
-     select(age, gender, city, state, country, year)),
+     select(age = Age, gender = "M/F", city = City, state = State, country = Country, year)),
                  (results_2016 %>%
       mutate(year = "2016") %>%
-        rename(c("Age" = "age",
-              "M/F" = "gender",
-              "State" = "state",
-              "City" = "city",
-              "Country" = "country")) %>%
-        select(age, gender, city, state, country, year)),
+     select(age = Age, gender = "M/F", city = City, state = State, country = Country, year)),
                  (results_2017 %>%
       mutate(year = "2017") %>%
-        rename(c("Age" = "age",
-              "M/F" = "gender",
-              "State" = "state",
-              "City" = "city",
-              "Country" = "country")) %>%
-    select(age, gender, city, state, country, year)))
-     
+     select(age = Age, gender = "M/F", city = City, state = State, country = Country, year)))
+
+all <- bind_rows(all, new)
 ```
