@@ -72,9 +72,9 @@ state_abb <- state_abb %>%
   mutate(State = tolower(State))
 states <- left_join(states, state_abb, by = c("region" = "State"))
 all_counts <- all %>%
-  group_by(year, state, gender, age) %>%
+  group_by(year, state, gender) %>%
   summarise(counts = n())
-states <- left_join(states, all_counts, by = c("Abbreviation" = "state"))
+states <- inner_join(states, all_counts, by = c("Abbreviation" = "state"))
 
 country_counts <- all %>%
   group_by(year, country) %>%
@@ -85,3 +85,41 @@ ggplot(data = states) +
   coord_map() + 
   theme_void()
 ```
+
+```{r}
+#shiny stuff
+library(shiny)
+library(dplyr)
+library(ggplot2)
+server <- function(input, output) {
+  output$map <- renderPlot({
+    states <- filter(states, year %in% input$year, gender %in% input$gender)
+    ggplot(data = states) + 
+  geom_polygon(aes(x = long, y = lat, group = group, fill = counts), color = "white") + 
+  coord_map() + 
+  theme_void()
+  })
+}
+  ui <- fluidPage(
+    titlePanel("Boston Marathon"),
+    sidebarLayout(
+      sidebarPanel(
+        helpText("Boston Marathon finishers"),
+        
+        checkboxGroupInput(inputId = "year",
+                           label = "Which year(s) do you want to see?",
+                           choices = unique(states$year),
+                           selected = c("2001")),
+        
+        checkboxGroupInput(inputId = "gender",
+                           label = "Which gender do you want to see?",
+                           choices = unique(states$gender),
+                           selected = c("M"))),
+      mainPanel(
+        plotOutput(outputId = "map")
+      )
+    )
+  )
+shinyApp(ui = ui, server = server)
+```
+
