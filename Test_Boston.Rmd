@@ -62,4 +62,26 @@ all <- bind_rows(mutate(results_2001, year = "2001"),
      select(age = Age, gender = "M/F", city = City, state = State, country = Country, year)))
 
 all <- bind_rows(all, new)
+
+library(ggmap)
+library(maps)
+library(leaflet)
+states <- map_data("state")
+state_abb <- read_csv("Data/states.csv")
+state_abb <- state_abb %>%
+  mutate(State = tolower(State))
+states <- left_join(states, state_abb, by = c("region" = "State"))
+all_counts <- all %>%
+  group_by(year, state, gender, age) %>%
+  summarise(counts = n())
+states <- left_join(states, all_counts, by = c("Abbreviation" = "state"))
+
+country_counts <- all %>%
+  group_by(year, country) %>%
+  summarise(counts = n())
+
+ggplot(data = states) + 
+  geom_polygon(aes(x = long, y = lat, group = group, fill = counts), color = "white") + 
+  coord_map() + 
+  theme_void()
 ```

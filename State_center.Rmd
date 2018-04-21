@@ -41,5 +41,11 @@ state_center <- left_join(state_center, state_abb, by = c("State" = "State"))
 #all_counts <- all %>%
 #  group_by(year, state) %>%
 #  summarise(count = n())
-#states <- left_join(states, all, by = c("Abbreviation" = "state"))
+state_center <- left_join(state_center, all, by = c("Abbreviation" = "state"))
+state_center <- state_center %>%
+  mutate(Longitude = as.numeric(Longitude), Latitude = as.numeric(Latitude))
+leaflet() %>%
+  addTiles() %>%
+  addMarkers(lng = ~Longitude, lat = ~Latitude, data = state_center,
+             label = ~as.character())
 ```
