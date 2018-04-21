@@ -1,0 +1,23 @@
+---
+title: "Urls"
+author: "Kevin"
+date: "4/21/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+https://inkplant.com/code/state-latitudes-longitudes
+This gave us the center points of all of our states.
+
+https://github.com/llimllib/bostonmarathon
+Basically all of our date (up to 2014)
+
+https://www.kaggle.com/rojour/boston-results/data
+Data up from 2015 - 2017
+
+http://www.fonz.net/blog/archives/2008/04/06/csv-of-states-and-state-abbreviations/
+State abbreviations

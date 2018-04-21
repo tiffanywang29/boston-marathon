@@ -1,0 +1,45 @@
+---
+title: "Test_1"
+author: "Kevin"
+date: "4/21/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggmap)
+library(maps)
+library(leaflet)
+library(readr)
+library(dplyr)
+library(rvest)
+states <- map_data("state")
+```
+
+```{r}
+url <- "https://inkplant.com/code/state-latitudes-longitudes"
+state_center <- url %>%
+  read_html() %>%
+  html_node(xpath = '//*[@id="main_content_div"]/table') %>%
+  html_table()
+
+my_names <- state_center[1,]
+
+colnames(state_center) <- my_names
+state_center <- state_center %>%
+  filter(State != "State")
+```
+
+```{r}
+state_abb <- read_csv("Data/states.csv")
+#state_abb <- state_abb %>%
+#  mutate(State = tolower(State))
+state_center <- left_join(state_center, state_abb, by = c("State" = "State"))
+#all_counts <- all %>%
+#  group_by(year, state) %>%
+#  summarise(count = n())
+#states <- left_join(states, all, by = c("Abbreviation" = "state"))
+```
