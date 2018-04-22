@@ -72,7 +72,18 @@ state_abb <- state_abb %>%
   mutate(State = tolower(State))
 states <- left_join(states, state_abb, by = c("region" = "State"))
 all_counts <- all %>%
-  group_by(year, state, gender) %>%
+  mutate(age.range = ifelse(age %in% 18:34, "18-34", 
+                            ifelse(age %in% 34:39, "34-39",
+                                   ifelse(age %in% 40:44, "40-44",
+                                          ifelse(age %in% 45:49, "45-49",
+                                                 ifelse(age %in% 50:54, "50-54",
+                                                        ifelse(age %in% 55:59, "55-59",
+                                                               ifelse(age %in% 60:64, "60-64",
+                                                                      ifelse(age %in% 65:69, "65-69",
+                                                                             ifelse(age %in% 70:74, "70-74",
+                                                                                    ifelse(age %in% 75:79, "75-79", "80+"))))))))))) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(year, state, gender, age.range) %>%
   summarise(counts = n())
 states <- inner_join(states, all_counts, by = c("Abbreviation" = "state"))
 
@@ -93,11 +104,17 @@ library(dplyr)
 library(ggplot2)
 server <- function(input, output) {
   output$map <- renderPlot({
-    states <- filter(states, year %in% input$year, gender %in% input$gender)
+    states <- filter(states, gender %in% input$gender, age.range %in% input$age)
     ggplot(data = states) + 
-  geom_polygon(aes(x = long, y = lat, group = group, fill = counts), color = "white") + 
+  geom_polygon(aes(x = long, y = lat, group = group, fill = log(counts)), color = "white") + 
+  scale_fill_gradient(low = "#FFDD00", high = "#0004FF") +
+  labs(fill = "Log of Runners") +
   coord_map() + 
   theme_void()
+  })
+  #placeholder for printing the table of whatever data people choose to look at
+  output$table <- renderTable({
+    
   })
 }
   ui <- fluidPage(
@@ -106,17 +123,26 @@ server <- function(input, output) {
       sidebarPanel(
         helpText("Boston Marathon finishers"),
         
-        checkboxGroupInput(inputId = "year",
-                           label = "Which year(s) do you want to see?",
-                           choices = unique(states$year),
-                           selected = c("2001")),
+        checkboxGroupInput(inputId = "age",
+                           label = "Which age range(s) do you want to see?",
+                           choices = unique(states$age.range),
+                           selected = c("18-34")),
         
         checkboxGroupInput(inputId = "gender",
                            label = "Which gender do you want to see?",
                            choices = unique(states$gender),
                            selected = c("M"))),
+      
+        #Can't get this to work
+      #sliderInput(inputId = "year",
+         #           label = "Choose a range of years:",
+          #          min = 2001, max = 2017,
+           #         value = c(2015, 2017)),
+      
       mainPanel(
-        plotOutput(outputId = "map")
+        tabsetPanel(type = "tabs",
+                  tabPanel("Map", plotOutput(outputId = "map")),
+                  tabPanel("Table", tableOutput(outputId = "table")))
       )
     )
   )
