@@ -47,5 +47,38 @@ state_center <- state_center %>%
 leaflet() %>%
   addTiles() %>%
   addMarkers(lng = ~Longitude, lat = ~Latitude, data = state_center,
-             label = ~as.character())
+             label = ~as.character(State))
+
+
 ```
+
+
+
+```{r}
+library(geojson)
+all_chlor <- all %>%
+  filter(country == "USA") %>%
+  group_by(year, state) %>%
+  summarise(count = n())
+all_chlor <- left_join(state_abb, all_chlor, by = c("Abbreviation" = "state"))
+all_chlor <- mutate(all_chlor, State = tolower(State))
+all_chlor_2001 <- all_chlor %>%
+  filter(year == 2001)
+chlor_2001 <- left_join(states, all_chlor_2001, by = c("region" = "State"))
+chlor_2001 <- 
+map_state <- map("state", region = ".", exact = TRUE, boundary = TRUE)
+leaflet(map_state) %>%
+  addTiles() %>%
+  addPolygons(
+    #fillColor = ~all_chlor_2001$count,
+    color = "white",
+    highlight = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = TRUE))
+  
+
+```
+
