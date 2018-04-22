@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(readr)
 library(dplyr)
+library(tidyr)
 results_2001 <- read_csv("Data/results_2001.csv")
 results_2002 <- read_csv("Data/results_2002.csv")
 results_2003 <- read_csv("Data/results_2003.csv")
@@ -87,6 +88,18 @@ all_counts <- all %>%
   summarise(counts = n())
 states <- inner_join(states, all_counts, by = c("Abbreviation" = "state"))
 
+summary_1 <- all %>%
+  group_by(year) %>%
+  summarise(distinct_countries = n_distinct(country))
+summary_2 <- all %>%
+  group_by(year, gender) %>%
+  summarise(count = n())
+summary_2 <- spread(summary_2, 
+                    key = gender, 
+                    value = count)
+summary <- left_join(summary_2, summary_1, by = c("year" = "year"))
+summary <- mutate(summary, total = M + F)
+
 country_counts <- all %>%
   group_by(year, country) %>%
   summarise(counts = n())
@@ -95,9 +108,7 @@ ggplot(data = states) +
   geom_polygon(aes(x = long, y = lat, group = group, fill = counts), color = "white") + 
   coord_map() + 
   theme_void()
-```
 
-```{r}
 #shiny stuff
 library(shiny)
 library(dplyr)
@@ -112,14 +123,33 @@ server <- function(input, output) {
   coord_map() + 
   theme_void()
   })
+<<<<<<< HEAD
   #placeholder for printing the table of whatever data people choose to look at
   output$table <- renderTable({
     
+=======
+  
+  
+  output$table <- DT::renderDataTable({
+    req(input$vars)
+    data_react <- select(all, input$vars)
+    DT::datatable(data = data_react, rownames = FALSE)
+  })
+  
+  output$summary <- DT::renderDataTable({
+    req(input$sumyear)
+    summ_react <- filter(summary, year %in% input$sumyear)
+    DT::datatable(data = summ_react, rownames = FALSE)
+>>>>>>> 6a1f80f11eaf4988fd62b00fbff8d9fa03c6fd53
   })
 }
+
   ui <- fluidPage(
     titlePanel("Boston Marathon"),
+    tabsetPanel(type = "tabs",
+                  tabPanel(title = "Plot",
     sidebarLayout(
+      
       sidebarPanel(
         helpText("Boston Marathon finishers"),
         
@@ -140,12 +170,55 @@ server <- function(input, output) {
            #         value = c(2015, 2017)),
       
       mainPanel(
+<<<<<<< HEAD
         tabsetPanel(type = "tabs",
                   tabPanel("Map", plotOutput(outputId = "map")),
                   tabPanel("Table", tableOutput(outputId = "table")))
+=======
+        plotOutput(outputId = "map")
+      ) 
+      )),
+                tabPanel(title = "Data Table",
+                         sidebarLayout(
+      sidebarPanel(
+        helpText("Boston Marathon finshers"),
+                 
+        checkboxGroupInput(inputId = "vars",
+                           label = "Which variable(s) do you want to see?",
+                           choices = list("Age" = "age",
+                                          "Gender" = "gender",
+                                          "City" = "city",
+                                          "State" = "state",
+                                          "Country" = "country",
+                                          "Year" = "year"),
+                           selected = c("age", 
+                                        "gender",
+                                        "city", 
+                                        "state",
+                                        "country",
+                                        "year"))),
+      mainPanel(
+        DT::dataTableOutput(outputId = "table"))
+>>>>>>> 6a1f80f11eaf4988fd62b00fbff8d9fa03c6fd53
       )
-    )
+      ),
+          tabPanel(title = "Summary",
+                   sidebarLayout(
+      
+      sidebarPanel(
+        helpText("Boston Marathon finishers"),
+        
+        checkboxGroupInput(inputId = "sumyear",
+                           label = "Which year(s) do you want to see?",
+                           choices = summary$year,
+                           selected = summary$year)),
+      mainPanel(
+        DT::dataTableOutput(outputId = "summary")
+      )
+    ))
   )
+  )
+  
 shinyApp(ui = ui, server = server)
 ```
 
