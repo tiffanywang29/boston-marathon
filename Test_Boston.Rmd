@@ -109,6 +109,7 @@ tables <- url %>%
   read_html() %>%
   html_nodes(css = "table") 
 participation <- html_table(tables[[2]])
+colnames(participation) <- c("year", "total", "men", "women", "(F)_total", "(F)_men", "(F)_women")
 ```
 
 ```{r}
@@ -118,10 +119,11 @@ library(dplyr)
 library(ggplot2)
 server <- function(input, output) {
   output$line <- renderPlot({
-    req(input$gender)
-    data_react <- select(participation, input$gender)
-    ggplot(data = participation) +
-      geom_line(aes(x = Year, y = input$gender))
+    req(input$genderline)
+    data_react <- select(participation, input$genderline, year) %>%
+      filter(year <= input$animation)
+    ggplot(data = data_react) +
+      geom_line(aes_string(x = 'year', y = input$genderline, group = 1))
   })
   
   output$map <- renderPlot({
@@ -155,12 +157,12 @@ server <- function(input, output) {
       sidebarLayout(
         
           sidebarPanel(
-            helpText("Entires over the Years"),
+            helpText("Entries over the Years"),
                              
-            checkboxGroupInput(inputId = "gender",
+            checkboxGroupInput(inputId = "genderline",
                               label = "Which gender do you want to see?",
-                              choices = list("Male" = "(E) MEN",
-                                             "Female" = "(E) WOMEN"),
+                              choices = list("Male" = "men",
+                                             "Female" = "women"),
                               selected = c("Male",
                                            "Female")),
             
