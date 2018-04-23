@@ -159,12 +159,12 @@ server <- function(input, output) {
           sidebarPanel(
             helpText("Entries over the Years"),
                              
-            checkboxGroupInput(inputId = "genderline",
-                              label = "Which gender do you want to see?",
-                              choices = list("Male" = "men",
-                                             "Female" = "women"),
-                              selected = c("Male",
-                                           "Female")),
+            radioButtons(inputId = "genderline",
+                         label = "Which gender do you want to see?",
+                         choices = list("Male" = "men",
+                                        "Female" = "women",
+                                        "Both" = "total"),
+                        selected = ("Male")),
             
             sliderInput(inputId = "animation", 
                         label = "Years:",
