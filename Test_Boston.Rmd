@@ -66,7 +66,7 @@ all <- bind_rows(all, new)
 
 library(ggmap)
 library(maps)
-library(leaflet)
+library(rvest)
 states <- map_data("state")
 state_abb <- read_csv("Data/states.csv")
 state_abb <- state_abb %>%
@@ -104,18 +104,28 @@ country_counts <- all %>%
   group_by(year, country) %>%
   summarise(counts = n())
 
-ggplot(data = states) + 
-  geom_polygon(aes(x = long, y = lat, group = group, fill = counts), color = "white") + 
-  coord_map() + 
-  theme_void()
+url <- "http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx"
+tables <- url %>%
+  read_html() %>%
+  html_nodes(css = "table") 
+participation <- html_table(tables[[2]])
+```
 
+```{r}
 #shiny stuff
 library(shiny)
 library(dplyr)
 library(ggplot2)
 server <- function(input, output) {
+  output$line <- renderPlot({
+    req(input$gender)
+    data_react <- select(participation, input$gender)
+    ggplot(data = participation) +
+      geom_line(aes(x = Year, y = input$gender))
+  })
+  
   output$map <- renderPlot({
-    states <- filter(states, gender %in% input$gender, age.range %in% input$age)
+    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2])
     ggplot(data = states) + 
   geom_polygon(aes(x = long, y = lat, group = group, fill = log(counts)), color = "white") + 
   scale_fill_gradient(low = "#FFDD00", high = "#0004FF") +
@@ -123,12 +133,6 @@ server <- function(input, output) {
   coord_map() + 
   theme_void()
   })
-<<<<<<< HEAD
-  #placeholder for printing the table of whatever data people choose to look at
-  output$table <- renderTable({
-    
-=======
-  
   
   output$table <- DT::renderDataTable({
     req(input$vars)
@@ -140,14 +144,39 @@ server <- function(input, output) {
     req(input$sumyear)
     summ_react <- filter(summary, year %in% input$sumyear)
     DT::datatable(data = summ_react, rownames = FALSE)
->>>>>>> 6a1f80f11eaf4988fd62b00fbff8d9fa03c6fd53
   })
 }
 
   ui <- fluidPage(
-    titlePanel("Boston Marathon"),
+    navbarPage("Boston Marathon"),
     tabsetPanel(type = "tabs",
-                  tabPanel(title = "Plot",
+                
+                tabPanel(title = "Participation",
+      sidebarLayout(
+        
+          sidebarPanel(
+            helpText("Entires over the Years"),
+                             
+            checkboxGroupInput(inputId = "gender",
+                              label = "Which gender do you want to see?",
+                              choices = list("Male" = "(E) MEN",
+                                             "Female" = "(E) WOMEN"),
+                              selected = c("Male",
+                                           "Female")),
+            
+            sliderInput(inputId = "animation", 
+                        label = "Years:",
+                        min = 1972, max = 2017,
+                        value = 1972, step = 1,
+                        animate = animationOptions(loop = TRUE))
+                          ),
+      
+      mainPanel(
+        plotOutput(outputId = "line")
+      )
+      )),
+      
+                  tabPanel(title = "Map",
     sidebarLayout(
       
       sidebarPanel(
@@ -161,20 +190,16 @@ server <- function(input, output) {
         checkboxGroupInput(inputId = "gender",
                            label = "Which gender do you want to see?",
                            choices = unique(states$gender),
-                           selected = c("M"))),
+                           selected = c("M")),
       
         #Can't get this to work
-      #sliderInput(inputId = "year",
-         #           label = "Choose a range of years:",
-          #          min = 2001, max = 2017,
-           #         value = c(2015, 2017)),
+      sliderInput(inputId = "year",
+                    label = "Choose a range of years:",
+                    min = 2001, max = 2017,
+                    value = c(2015, 2017))
+      ),
       
       mainPanel(
-<<<<<<< HEAD
-        tabsetPanel(type = "tabs",
-                  tabPanel("Map", plotOutput(outputId = "map")),
-                  tabPanel("Table", tableOutput(outputId = "table")))
-=======
         plotOutput(outputId = "map")
       ) 
       )),
@@ -199,7 +224,6 @@ server <- function(input, output) {
                                         "year"))),
       mainPanel(
         DT::dataTableOutput(outputId = "table"))
->>>>>>> 6a1f80f11eaf4988fd62b00fbff8d9fa03c6fd53
       )
       ),
           tabPanel(title = "Summary",
