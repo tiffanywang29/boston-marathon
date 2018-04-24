@@ -127,6 +127,7 @@ server <- function(input, output) {
       geom_line(aes_string(x = 'year', y = input$genderline, group = 1))
   })
   
+  
   output$map <- renderPlot({
     states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2])
     ggplot(data = states) + 
@@ -135,6 +136,11 @@ server <- function(input, output) {
   labs(fill = "Log of Runners") +
   coord_map() + 
   theme_void()
+  })
+  
+  output$ustable <- DT::renderDataTable({
+    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2])
+    DT::datatable(data = states, rownames = FALSE)
   })
   
   output$table <- DT::renderDataTable({
@@ -182,7 +188,6 @@ server <- function(input, output) {
       
                   tabPanel(title = "Map",
     sidebarLayout(
-      
       sidebarPanel(
         helpText("Boston Marathon finishers from the US"),
         
@@ -204,9 +209,16 @@ server <- function(input, output) {
       ),
       
       mainPanel(
-        plotOutput(outputId = "map")
+        tabsetPanel(
+          tabPanel(
+            title = "US Map",
+        plotOutput(outputId = "map")),
+        tabPanel(
+          title = "Data Table",
+        dataTableOutput(outputId = "ustable")
+        )
       ) 
-      )),
+      ))),
                 tabPanel(title = "Data Table",
                          verticalLayout(
         helpText("We can also look at a table of all the finishers from all around the world."),
