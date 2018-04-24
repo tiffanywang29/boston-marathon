@@ -117,6 +117,7 @@ colnames(participation) <- c("year", "total", "men", "women", "(F)_total", "(F)_
 library(shiny)
 library(dplyr)
 library(ggplot2)
+library(shinythemes)
 server <- function(input, output) {
   output$line <- renderPlot({
     req(input$genderline)
@@ -150,7 +151,7 @@ server <- function(input, output) {
 }
 
   ui <- fluidPage(
-    navbarPage("Boston Marathon"),
+    navbarPage("Boston Marathon", theme = shinythemes::shinytheme("united"),
     tabsetPanel(type = "tabs",
                 
                 tabPanel(title = "Participation",
@@ -170,8 +171,9 @@ server <- function(input, output) {
                         label = "Years:",
                         min = 1972, max = 2017,
                         value = 1972, step = 1,
-                        animate = animationOptions(loop = TRUE))
-                          ),
+                        animate = animationOptions(loop = TRUE),
+                        sep = ""),
+          tags$h5("Press play to begin!")),
       
       mainPanel(
         plotOutput(outputId = "line")
@@ -182,7 +184,7 @@ server <- function(input, output) {
     sidebarLayout(
       
       sidebarPanel(
-        helpText("Boston Marathon finishers"),
+        helpText("Boston Marathon finishers from the US"),
         
         checkboxGroupInput(inputId = "age",
                            label = "Which age range(s) do you want to see?",
@@ -194,11 +196,11 @@ server <- function(input, output) {
                            choices = unique(states$gender),
                            selected = c("M")),
       
-        #Can't get this to work
       sliderInput(inputId = "year",
                     label = "Choose a range of years:",
                     min = 2001, max = 2017,
-                    value = c(2015, 2017))
+                    value = c(2015, 2017),
+                    sep = "")
       ),
       
       mainPanel(
@@ -206,9 +208,8 @@ server <- function(input, output) {
       ) 
       )),
                 tabPanel(title = "Data Table",
-                         sidebarLayout(
-      sidebarPanel(
-        helpText("Boston Marathon finshers"),
+                         verticalLayout(
+        helpText("We can also look at a table of all the finishers from all around the world."),
                  
         checkboxGroupInput(inputId = "vars",
                            label = "Which variable(s) do you want to see?",
@@ -224,15 +225,14 @@ server <- function(input, output) {
                                         "state",
                                         "country",
                                         "year"))),
-      mainPanel(
-        DT::dataTableOutput(outputId = "table"))
-      )
+        
+        DT::dataTableOutput(outputId = "table")
       ),
           tabPanel(title = "Summary",
                    sidebarLayout(
       
       sidebarPanel(
-        helpText("Boston Marathon finishers"),
+        helpText("What about some summary statistics from the last 16 years?"),
         
         checkboxGroupInput(inputId = "sumyear",
                            label = "Which year(s) do you want to see?",
@@ -242,9 +242,8 @@ server <- function(input, output) {
         DT::dataTableOutput(outputId = "summary")
       )
     ))
-  )
-  )
-  
+  ))
+)
 shinyApp(ui = ui, server = server)
 ```
 
