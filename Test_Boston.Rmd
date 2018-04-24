@@ -63,6 +63,7 @@ all <- bind_rows(mutate(results_2001, year = "2001"),
      select(age = Age, gender = "M/F", city = City, state = State, country = Country, year)))
 
 all <- bind_rows(all, new)
+colnames(all) <- c("Age", "Gender", "City", "State", "Country", "Year")
 
 library(ggmap)
 library(maps)
@@ -139,7 +140,8 @@ server <- function(input, output) {
   })
   
   output$ustable <- DT::renderDataTable({
-    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2])
+    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2]) %>%
+      select("State" = region, "Year" = year, "Gender" = gender, "Age Range" = age.range, "Number of Runners" = counts)
     DT::datatable(data = states, rownames = FALSE)
   })
   
@@ -151,13 +153,16 @@ server <- function(input, output) {
   
   output$summary <- DT::renderDataTable({
     req(input$sumyear)
-    summ_react <- filter(summary, year %in% input$sumyear)
+    summ_react <- filter(summary, year %in% input$sumyear) %>%
+      select("Year" = year, "Female" = "F", "Male" = "M", "Total Countries" = distinct_countries, "Number of Runners" = total)
     DT::datatable(data = summ_react, rownames = FALSE)
   })
 }
 
   ui <- fluidPage(
     navbarPage("Boston Marathon", theme = shinythemes::shinytheme("united"),
+    p("The", 
+    tags$a(href="http://www.baa.org/", "Boston Marathon"), "has been around for 122 years. Each Patriots' Day, celebrated on the third Monday of April, thousands of runners from around the world come together and run 26.2 miles. Here we have data on the runners who have participated in the more recent Boston Marathons. Let's explore how the race has changed!"),
     tabsetPanel(type = "tabs",
                 
                 tabPanel(title = "Participation",
@@ -171,7 +176,7 @@ server <- function(input, output) {
                          choices = list("Male" = "men",
                                         "Female" = "women",
                                         "Both" = "total"),
-                        selected = ("Male")),
+                        selected = ("total")),
             
             sliderInput(inputId = "animation", 
                         label = "Years:",
@@ -186,7 +191,7 @@ server <- function(input, output) {
       )
       )),
       
-                  tabPanel(title = "Map",
+                  tabPanel(title = "US Finishers",
     sidebarLayout(
       sidebarPanel(
         helpText("Boston Marathon finishers from the US"),
@@ -211,32 +216,32 @@ server <- function(input, output) {
       mainPanel(
         tabsetPanel(
           tabPanel(
-            title = "US Map",
+            title = "Map",
         plotOutput(outputId = "map")),
         tabPanel(
           title = "Data Table",
-        dataTableOutput(outputId = "ustable")
+        DT::dataTableOutput(outputId = "ustable")
         )
       ) 
       ))),
-                tabPanel(title = "Data Table",
+                tabPanel(title = "All Finishers",
                          verticalLayout(
         helpText("We can also look at a table of all the finishers from all around the world."),
                  
         checkboxGroupInput(inputId = "vars",
                            label = "Which variable(s) do you want to see?",
-                           choices = list("Age" = "age",
-                                          "Gender" = "gender",
-                                          "City" = "city",
-                                          "State" = "state",
-                                          "Country" = "country",
-                                          "Year" = "year"),
-                           selected = c("age", 
-                                        "gender",
-                                        "city", 
-                                        "state",
-                                        "country",
-                                        "year"))),
+                           choices = list("Age",
+                                          "Gender",
+                                          "City",
+                                          "State",
+                                          "Country",
+                                          "Year"),
+                           selected = c("Age", 
+                                        "Gender",
+                                        "City", 
+                                        "State",
+                                        "Country",
+                                        "Year"))),
         
         DT::dataTableOutput(outputId = "table")
       ),
@@ -253,7 +258,14 @@ server <- function(input, output) {
       mainPanel(
         DT::dataTableOutput(outputId = "summary")
       )
-    ))
+    )),
+      tabPanel(title = "More Information",
+               splitLayout(
+                 helpText("The following are the links to the data we used for this app:"),
+                 
+                 p(tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
+                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017"))
+               ))
   ))
 )
 shinyApp(ui = ui, server = server)
