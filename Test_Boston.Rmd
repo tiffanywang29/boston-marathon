@@ -261,10 +261,19 @@ server <- function(input, output) {
     )),
       tabPanel(title = "More Information",
                splitLayout(
-                 helpText("The following are the links to the data we used for this app:"),
+                 br(),
+                 p("The following are links to the data we used for this app:",
+                   tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
+                   br(),
+                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017"),
+                  br(),
+                  tags$a(href="http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx", "Participation Data from 1972-2017"),
+                  br(),
+                  "Dataset for",
+                  tags$a(href="http://www.fonz.net/blog/archives/2008/04/06/csv-of-states-and-state-abbreviations/", "state abbreviations"),
+                  "to join datasets"),
                  
-                 p(tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
-                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017"))
+                 p(tags$img(src = "https://en.wikipedia.org/wiki/Boston_Marathon#/media/File:Bostonmarathonlogo.jpg"))
                ))
   ))
 )
