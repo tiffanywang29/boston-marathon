@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(dplyr)
 library(tidyr)
+library(stringr)
 results_2001 <- read_csv("Data/results_2001.csv")
 results_2002 <- read_csv("Data/results_2002.csv")
 results_2003 <- read_csv("Data/results_2003.csv")
@@ -110,7 +111,22 @@ tables <- url %>%
   read_html() %>%
   html_nodes(css = "table") 
 participation <- html_table(tables[[2]])
-colnames(participation) <- c("year", "total", "men", "women", "(F)_total", "(F)_men", "(F)_women")
+colnames(participation) <- c("year", 
+                             "total", 
+                             "men", 
+                             "women", 
+                             "(F)_total", 
+                             "(F)_men", 
+                             "(F)_women")
+participation <- participation %>%
+  mutate(total = str_replace_all(total,",",""),
+         men = str_replace_all(men,",",""),
+         women = str_replace_all(women,",",""),
+         year = as.numeric(year),
+         total = as.numeric(total),
+         men = as.numeric(men),
+         women = as.numeric(women)) %>%
+  filter(!(is.na(year)))
 ```
 
 ```{r}
@@ -122,26 +138,51 @@ library(shinythemes)
 server <- function(input, output) {
   output$line <- renderPlot({
     req(input$genderline)
-    data_react <- select(participation, input$genderline, year) %>%
+    data_react <- select(participation, 
+                         input$genderline,
+                         year) %>%
       filter(year <= input$animation)
+    #ymin <- min(participation$input$genderline) - 10
+    #ymax <- max(participation$input$genderline) + 100
     ggplot(data = data_react) +
-      geom_line(aes_string(x = 'year', y = input$genderline, group = 1))
+      geom_line(aes_string(x = 'year', 
+                           y = input$genderline,
+                           group = 1)) +
+      xlim(1972, 2017) #+
+     # ylim(ymin, ymax)
   })
   
   
   output$map <- renderPlot({
-    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2])
+    states <- filter(states, 
+                     gender %in% input$gender, 
+                     age.range %in% input$age, 
+                     year >= input$year[1], 
+                     year <= input$year[2])
+    if (dim(states)[1] > 0){
     ggplot(data = states) + 
-  geom_polygon(aes(x = long, y = lat, group = group, fill = log(counts)), color = "white") + 
+  geom_polygon(aes(x = long, 
+                   y = lat, 
+                   group = group, 
+                   fill = log(counts)), 
+               color = "white") + 
   scale_fill_gradient(low = "#FFDD00", high = "#0004FF") +
   labs(fill = "Log of Runners") +
   coord_map() + 
   theme_void()
+    }
   })
   
   output$ustable <- DT::renderDataTable({
-    states <- filter(states, gender %in% input$gender, age.range %in% input$age, year >= input$year[1], year <= input$year[2]) %>%
-      select("State" = region, "Year" = year, "Gender" = gender, "Age Range" = age.range, "Number of Runners" = counts)
+    states <- filter(states, 
+                     gender %in% input$gender, 
+                     age.range %in% input$age, year >= input$year[1], 
+                     year <= input$year[2]) %>%
+      select("State" = region, 
+             "Year" = year, 
+             "Gender" = gender, 
+             "Age Range" = age.range, 
+             "Number of Runners" = counts)
     DT::datatable(data = states, rownames = FALSE)
   })
   
@@ -154,7 +195,11 @@ server <- function(input, output) {
   output$summary <- DT::renderDataTable({
     req(input$sumyear)
     summ_react <- filter(summary, year %in% input$sumyear) %>%
-      select("Year" = year, "Female" = "F", "Male" = "M", "Total Countries" = distinct_countries, "Number of Runners" = total)
+      select("Year" = year, 
+             "Female" = "F", 
+             "Male" = "M", 
+             "Total Countries" = distinct_countries, 
+             "Number of Runners" = total)
     DT::datatable(data = summ_react, rownames = FALSE)
   })
 }
@@ -162,7 +207,8 @@ server <- function(input, output) {
   ui <- fluidPage(
     navbarPage("Boston Marathon", theme = shinythemes::shinytheme("united"),
     p("The", 
-    tags$a(href="http://www.baa.org/", "Boston Marathon"), "has been around for 122 years. Each Patriots' Day, celebrated on the third Monday of April, thousands of runners from around the world come together and run 26.2 miles. Here we have data on the runners who have participated in the more recent Boston Marathons. Let's explore how the race has changed!"),
+    tags$a(href="http://www.baa.org/", "Boston Marathon"), 
+    "has been around for 122 years. Each Patriots' Day, celebrated on the third Monday of April, thousands of runners from around the world come together and run 26.2 miles. Here we have data on the runners who have participated in the more recent Boston Marathons. Let's explore how the race has changed!"),
     tabsetPanel(type = "tabs",
                 
                 tabPanel(title = "Participation",
@@ -260,9 +306,10 @@ server <- function(input, output) {
       )
     )),
       tabPanel(title = "More Information",
-               splitLayout(
+               fluidPage(
                  br(),
                  p("The following are links to the data we used for this app:",
+                   br(),
                    tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
                    br(),
                   tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017"),
@@ -273,11 +320,10 @@ server <- function(input, output) {
                   tags$a(href="http://www.fonz.net/blog/archives/2008/04/06/csv-of-states-and-state-abbreviations/", "state abbreviations"),
                   "to join datasets"),
                  
-                 p(tags$img(src = "https://en.wikipedia.org/wiki/Boston_Marathon#/media/File:Bostonmarathonlogo.jpg"))
+                 p(tags$img(src = "https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Bostonmarathonlogo.jpg/220px-Bostonmarathonlogo.jpg"))
                ))
   ))
 )
 shinyApp(ui = ui, server = server)
-#test
 ```
 

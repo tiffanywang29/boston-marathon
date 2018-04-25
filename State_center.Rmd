@@ -82,3 +82,11 @@ leaflet(map_state) %>%
 
 ```
 
+```{r}
+
+ggplotly(ggplot(data = participation) +
+      geom_line(aes(x = year, y = men, group = 1, frame = year)))
+
+```
+
+
