@@ -1,10 +1,10 @@
-library(shiny)
 library(readr)
 library(ggmap)
 library(maps)
 library(rvest)
 library(tidyr)
 library(stringr)
+library(shiny)
 library(ggplot2)
 library(shinythemes)
 library(dplyr)
@@ -68,35 +68,35 @@ state_abb <- state_abb %>%
   mutate(State = tolower(State))
 states <- left_join(states, state_abb, by = c("region" = "State"))
 all_counts <- all %>%
-  mutate(age.range = ifelse(Age %in% 18:34, "18-34", 
-                            ifelse(Age %in% 34:39, "34-39",
-                                   ifelse(Age %in% 40:44, "40-44",
-                                          ifelse(Age %in% 45:49, "45-49",
-                                                 ifelse(Age %in% 50:54, "50-54",
-                                                        ifelse(Age %in% 55:59, "55-59",
-                                                               ifelse(Age %in% 60:64, "60-64",
-                                                                      ifelse(Age %in% 65:69, "65-69",
-                                                                             ifelse(Age %in% 70:74, "70-74",
-                                                                                    ifelse(Age %in% 75:79, "75-79", "80+"))))))))))) %>%
-  mutate(Year = as.numeric(Year)) %>%
-  group_by(Year, State, Gender, age.range) %>%
+  mutate(age.range = ifelse(age %in% 18:34, "18-34", 
+                            ifelse(age %in% 34:39, "34-39",
+                                   ifelse(age %in% 40:44, "40-44",
+                                          ifelse(age %in% 45:49, "45-49",
+                                                 ifelse(age %in% 50:54, "50-54",
+                                                        ifelse(age %in% 55:59, "55-59",
+                                                               ifelse(age %in% 60:64, "60-64",
+                                                                      ifelse(age %in% 65:69, "65-69",
+                                                                             ifelse(age %in% 70:74, "70-74",
+                                                                                    ifelse(age %in% 75:79, "75-79", "80+"))))))))))) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(year, state, gender, age.range) %>%
   summarise(counts = n())
-states <- inner_join(states, all_counts, by = c("Abbreviation" = "State"))
+states <- inner_join(states, all_counts, by = c("Abbreviation" = "state"))
 
 summary_1 <- all %>%
-  group_by(Year) %>%
-  summarise(distinct_countries = n_distinct(Country))
+  group_by(year) %>%
+  summarise(distinct_countries = n_distinct(country))
 summary_2 <- all %>%
-  group_by(Year, Gender) %>%
+  group_by(year, gender) %>%
   summarise(count = n())
 summary_2 <- spread(summary_2, 
-                    key = Gender, 
+                    key = gender, 
                     value = count)
-summary <- left_join(summary_2, summary_1, by = c("Year" = "Year"))
+summary <- left_join(summary_2, summary_1, by = c("year" = "year"))
 summary <- mutate(summary, total = M + F)
 
 country_counts <- all %>%
-  group_by(Year, Country) %>%
+  group_by(year, country) %>%
   summarise(counts = n())
 
 url <- "http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx"
@@ -144,10 +144,10 @@ server <- function(input, output) {
   output$map <- renderPlot({
     states_reactive <- eventReactive(input$action,
                                      {filter(states, 
-                                             Gender %in% input$gender, 
+                                             gender %in% input$gender, 
                                              age.range %in% input$age, 
-                                             Year >= input$year[1], 
-                                             Year <= input$year[2])
+                                             year >= input$year[1], 
+                                             year <= input$year[2])
                                      })
     if (dim(states_reactive())[1] > 0){
       ggplot(data = states_reactive()) + 
@@ -166,13 +166,12 @@ server <- function(input, output) {
   output$ustable <- DT::renderDataTable({
     states_react <- eventReactive(input$action,
                                   {filter(states, 
-                                          Gender %in% input$gender, 
-                                          age.range %in% input$age, 
-                                          Year >= input$year[1], 
-                                          Year <= input$year[2]) %>%
+                                          gender %in% input$gender, 
+                                          age.range %in% input$age, year >= input$year[1], 
+                                          year <= input$year[2]) %>%
                                       select("State" = region, 
-                                             "Year" = Year, 
-                                             "Gender" = Gender, 
+                                             "Year" = year, 
+                                             "Gender" = gender, 
                                              "Age Range" = age.range, 
                                              "Number of Runners" = counts)
                                   })
@@ -187,8 +186,8 @@ server <- function(input, output) {
   
   output$summary <- DT::renderDataTable({
     req(input$sumyear)
-    summ_react <- filter(summary, Year %in% input$sumyear) %>%
-      select("Year" = Year, 
+    summ_react <- filter(summary, year %in% input$sumyear) %>%
+      select("Year" = year, 
              "Female" = "F", 
              "Male" = "M", 
              "Total Countries" = distinct_countries, 
@@ -242,8 +241,8 @@ ui <- fluidPage(
                                       
                                       checkboxGroupInput(inputId = "gender",
                                                          label = "Which gender do you want to see?",
-                                                         choices = unique(states$Gender),
-                                                         selected = unique(states$Gender)),
+                                                         choices = unique(states$gender),
+                                                         selected = unique(states$gender)),
                                       
                                       sliderInput(inputId = "year",
                                                   label = "Choose a range of years:",
@@ -295,8 +294,8 @@ ui <- fluidPage(
                                       
                                       checkboxGroupInput(inputId = "sumyear",
                                                          label = "Which year(s) do you want to see?",
-                                                         choices = summary$Year,
-                                                         selected = summary$Year)),
+                                                         choices = summary$year,
+                                                         selected = summary$year)),
                                     
                                     mainPanel(
                                       DT::dataTableOutput(outputId = "summary")

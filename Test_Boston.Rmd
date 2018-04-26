@@ -11,9 +11,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(readr)
-library(dplyr)
+library(ggmap)
+library(maps)
+library(rvest)
 library(tidyr)
 library(stringr)
+library(shiny)
+library(ggplot2)
+library(shinythemes)
+library(dplyr)
+
 results_2001 <- read_csv("Data/results_2001.csv")
 results_2002 <- read_csv("Data/results_2002.csv")
 results_2003 <- read_csv("Data/results_2003.csv")
@@ -66,9 +73,7 @@ all <- bind_rows(mutate(results_2001, year = "2001"),
 all <- bind_rows(all, new)
 colnames(all) <- c("Age", "Gender", "City", "State", "Country", "Year")
 
-library(ggmap)
-library(maps)
-library(rvest)
+
 states <- map_data("state")
 state_abb <- read_csv("Data/states.csv")
 state_abb <- state_abb %>%
@@ -131,10 +136,8 @@ participation <- participation %>%
 
 ```{r}
 #shiny stuff
-library(shiny)
-library(dplyr)
-library(ggplot2)
-library(shinythemes)
+
+
 server <- function(input, output) {
   output$line <- renderPlot({
     req(input$genderline)
@@ -148,19 +151,22 @@ server <- function(input, output) {
       geom_line(aes_string(x = 'year', 
                            y = input$genderline,
                            group = 1)) +
+      theme_bw() +
       xlim(1972, 2017) +
-      ylim(ymin, ymax)
+      ylim(ymin, ymax) 
   })
   
   
   output$map <- renderPlot({
-    states <- filter(states, 
+    states_reactive <- eventReactive(input$action,
+                            {filter(states, 
                      gender %in% input$gender, 
                      age.range %in% input$age, 
                      year >= input$year[1], 
                      year <= input$year[2])
-    if (dim(states)[1] > 0){
-    ggplot(data = states) + 
+      })
+    if (dim(states_reactive())[1] > 0){
+    ggplot(data = states_reactive()) + 
   geom_polygon(aes(x = long, 
                    y = lat, 
                    group = group, 
@@ -174,7 +180,8 @@ server <- function(input, output) {
   })
   
   output$ustable <- DT::renderDataTable({
-    states <- filter(states, 
+    states_react <- eventReactive(input$action,
+                            {filter(states, 
                      gender %in% input$gender, 
                      age.range %in% input$age, year >= input$year[1], 
                      year <= input$year[2]) %>%
@@ -183,7 +190,8 @@ server <- function(input, output) {
              "Gender" = gender, 
              "Age Range" = age.range, 
              "Number of Runners" = counts)
-    DT::datatable(data = states, rownames = FALSE)
+                            })
+    DT::datatable(data = states_react(), rownames = FALSE)
   })
   
   output$table <- DT::renderDataTable({
@@ -230,7 +238,7 @@ server <- function(input, output) {
                         value = 1972, step = 1,
                         animate = animationOptions(loop = TRUE),
                         sep = ""),
-          tags$h5("Press play to begin!"), tags$a(href="http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx", "Participation Data from 1972-2017")),
+          tags$h5("Press play to begin!")),
       
       mainPanel(
         plotOutput(outputId = "line")
@@ -245,22 +253,22 @@ server <- function(input, output) {
         checkboxGroupInput(inputId = "age",
                            label = "Which age range(s) do you want to see?",
                            choices = unique(states$age.range),
-                           selected = c("18-34")),
+                           selected =  unique(states$age.range)),
         
         checkboxGroupInput(inputId = "gender",
                            label = "Which gender do you want to see?",
                            choices = unique(states$gender),
-                           selected = c("M")),
+                           selected = unique(states$gender)),
       
       sliderInput(inputId = "year",
                     label = "Choose a range of years:",
                     min = 2001, max = 2017,
                     value = c(2015, 2017),
                     sep = ""),
-      tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
-      br(),
-                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")
-      ),
+      actionButton("action",
+                   label = "Click to Update"),
+      p("Please be patient while the server loads")),
+      
       
       mainPanel(
         tabsetPanel(
@@ -290,10 +298,7 @@ server <- function(input, output) {
                                         "City", 
                                         "State",
                                         "Country",
-                                        "Year")),
-        tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
-              br(),
-                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")),
+                                        "Year"))),
         
         DT::dataTableOutput(outputId = "table")
       ),
@@ -306,20 +311,18 @@ server <- function(input, output) {
         checkboxGroupInput(inputId = "sumyear",
                            label = "Which year(s) do you want to see?",
                            choices = summary$year,
-                           selected = summary$year),
-        tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
-              br(),
-                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")),
+                           selected = summary$year)),
       
       mainPanel(
         DT::dataTableOutput(outputId = "summary")
       )
-<<<<<<< HEAD
+
     )),
       tabPanel(title = "More Information",
-               fluidPage(
+               sidebarLayout(
+                 sidebarPanel(width = 6,
                  br(),
-                 p("The following are links to the data we used for this app:",
+                 p(h4("The following are links to the data we used for this app:"),
                    br(),
                    tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
                    br(),
@@ -330,14 +333,15 @@ server <- function(input, output) {
                   "Dataset for",
                   tags$a(href="http://www.fonz.net/blog/archives/2008/04/06/csv-of-states-and-state-abbreviations/", "state abbreviations"),
                   "to join datasets"),
-                 
-                 p(tags$img(src = "https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Bostonmarathonlogo.jpg/220px-Bostonmarathonlogo.jpg"))
+                 br()),
+                 mainPanel(width = 6,
+                 br(),
+                 br(),
+                 p(tags$img(src = "https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Bostonmarathonlogo.jpg/220px-Bostonmarathonlogo.jpg")))
                ))
-=======
     ))
->>>>>>> db8206a6cb6d8211e8ae722de1dab34d84e5037d
-  ))
 )
+
 shinyApp(ui = ui, server = server)
 ```
 

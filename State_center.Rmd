@@ -86,7 +86,7 @@ leaflet(map_state) %>%
 
 ggplotly(ggplot(data = participation) +
       geom_line(aes(x = year, y = men, group = 1, frame = year)))
-
+results_2001 <- read_csv("Data/results_2001.csv")
 ```
 
 
