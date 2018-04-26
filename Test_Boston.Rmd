@@ -205,7 +205,7 @@ server <- function(input, output) {
 }
 
   ui <- fluidPage(
-    navbarPage("Boston Marathon", theme = shinythemes::shinytheme("united"),
+    navbarPage("Boston Marathon", tags$h5("Kevin Choi and Tiffany Wang"), theme = shinythemes::shinytheme("united"),
     p("The", 
     tags$a(href="http://www.baa.org/", "Boston Marathon"), 
     "has been around for 122 years. Each Patriots' Day, celebrated on the third Monday of April, thousands of runners from around the world come together and run 26.2 miles. Here we have data on the runners who have participated in the more recent Boston Marathons. Let's explore how the race has changed!"),
@@ -230,7 +230,7 @@ server <- function(input, output) {
                         value = 1972, step = 1,
                         animate = animationOptions(loop = TRUE),
                         sep = ""),
-          tags$h5("Press play to begin!")),
+          tags$h5("Press play to begin!"), tags$a(href="http://www.baa.org/races/boston-marathon/boston-marathon-history/participation.aspx", "Participation Data from 1972-2017")),
       
       mainPanel(
         plotOutput(outputId = "line")
@@ -256,7 +256,10 @@ server <- function(input, output) {
                     label = "Choose a range of years:",
                     min = 2001, max = 2017,
                     value = c(2015, 2017),
-                    sep = "")
+                    sep = ""),
+      tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
+      br(),
+                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")
       ),
       
       mainPanel(
@@ -287,7 +290,10 @@ server <- function(input, output) {
                                         "City", 
                                         "State",
                                         "Country",
-                                        "Year"))),
+                                        "Year")),
+        tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
+              br(),
+                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")),
         
         DT::dataTableOutput(outputId = "table")
       ),
@@ -300,10 +306,15 @@ server <- function(input, output) {
         checkboxGroupInput(inputId = "sumyear",
                            label = "Which year(s) do you want to see?",
                            choices = summary$year,
-                           selected = summary$year)),
+                           selected = summary$year),
+        tags$a(href="https://github.com/llimllib/bostonmarathon", "Data from 2001-2014"),
+              br(),
+                  tags$a(href="https://www.kaggle.com/rojour/boston-results/data", "Data from 2015-2017")),
+      
       mainPanel(
         DT::dataTableOutput(outputId = "summary")
       )
+<<<<<<< HEAD
     )),
       tabPanel(title = "More Information",
                fluidPage(
@@ -322,6 +333,9 @@ server <- function(input, output) {
                  
                  p(tags$img(src = "https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Bostonmarathonlogo.jpg/220px-Bostonmarathonlogo.jpg"))
                ))
+=======
+    ))
+>>>>>>> db8206a6cb6d8211e8ae722de1dab34d84e5037d
   ))
 )
 shinyApp(ui = ui, server = server)
