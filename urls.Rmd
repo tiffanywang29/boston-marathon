@@ -21,3 +21,6 @@ Data up from 2015 - 2017
 
 http://www.fonz.net/blog/archives/2008/04/06/csv-of-states-and-state-abbreviations/
 State abbreviations
+
+
+scp -r ~/Stat041/Labs/Lab\ 12/ shiny:~/ShinyApps

@@ -142,14 +142,14 @@ server <- function(input, output) {
                          input$genderline,
                          year) %>%
       filter(year <= input$animation)
-    #ymin <- min(participation$input$genderline) - 10
-    #ymax <- max(participation$input$genderline) + 100
+    ymin <- min(as.vector(participation[input$genderline])) - 10
+    ymax <- max(as.vector(participation[input$genderline])) + 100
     ggplot(data = data_react) +
       geom_line(aes_string(x = 'year', 
                            y = input$genderline,
                            group = 1)) +
-      xlim(1972, 2017) #+
-     # ylim(ymin, ymax)
+      xlim(1972, 2017) +
+      ylim(ymin, ymax)
   })
   
   
