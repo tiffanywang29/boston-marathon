@@ -174,7 +174,8 @@ server <- function(input, output) {
                                              "Year" = Year, 
                                              "Gender" = Gender, 
                                              "Age Range" = age.range, 
-                                             "Number of Runners" = counts)
+                                             "Number of Runners" = counts) %>%
+                                      distinct(region, year, gender, age.range)
                                   })
     DT::datatable(data = states_react(), rownames = FALSE)
   })
